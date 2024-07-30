@@ -2,14 +2,17 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Get,
   Post,
-  Request,
+  Req,
+  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+
 import { AuthService } from 'src/auth/auth.service';
 import { registerDTO } from 'src/auth/dto/registerDTO.dto';
+import { Response, Request } from 'express';
 import { LocalAuthGuard } from 'src/auth/local-auth.guard';
 
 @UseInterceptors(ClassSerializerInterceptor)
@@ -23,7 +26,25 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Request() req) {
-    return this.authService.login(req.user);
+  async login(@Req() req, @Res({ passthrough: true }) res: Response) {
+    return this.authService.login(req.user, res);
+  }
+  @Get('refresh')
+  async refreshToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies['refresh_token'];
+    if (!refreshToken) {
+      res.status(401).json({ message: 'Refresh token not found' });
+      return;
+    }
+
+    try {
+      const { accessToken } = await this.authService.refreshToken(refreshToken);
+      return { access_token: accessToken };
+    } catch (error) {
+      res.status(401).json({ message: 'Invalid refresh token' });
+    }
   }
 }

@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { registerDTO } from 'src/auth/dto/registerDTO.dto';
 import { User } from 'src/users/entity/user.entity';
@@ -7,6 +12,8 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
+import { from, map, Observable } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -30,14 +37,14 @@ export class AuthService {
   async handleGenerateAccessToken(user: any) {
     const payload = { username: user.username, sub: user.userId };
     return this.jwtService.sign(payload, {
-      expiresIn: '60m',
+      expiresIn: this.configService.get('ACCESS_TOKEN_EXPIRATION'),
     });
   }
 
-  async handleRefreshToken(user: any) {
+  async handleGenerateRefreshToken(user: any) {
     const payload = { username: user.username, sub: user.userId };
     return this.jwtService.sign(payload, {
-      expiresIn: '7d',
+      expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRATION'),
     });
   }
 
@@ -93,13 +100,42 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any) {
+  async login(user: any, res: Response) {
     const accessToken = await this.handleGenerateAccessToken(user);
-    const refreshToken = await this.handleRefreshToken(user);
+    const refreshToken = await this.handleGenerateRefreshToken(user);
+
+    // Set refresh token in HTTP-only cookie
+    this.setRefreshTokenCookie(res, refreshToken);
+
     return {
       username: user.username,
       access_token: accessToken,
-      refresh_token: refreshToken,
     };
+  }
+
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken);
+      const newPayload = { username: payload.username, sub: payload.sub };
+      const accessToken = this.jwtService.sign(newPayload, {
+        expiresIn: '15m',
+      });
+      return { accessToken };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  decodeToken(token: string): any {
+    return this.jwtService.decode(token);
+  }
+
+  private setRefreshTokenCookie(res: Response, token: string) {
+    res.cookie('refresh_token', token, {
+      httpOnly: true,
+      secure: this.configService.get('JWT_SECRET'), // Use secure cookies in production
+      sameSite: 'strict', // Protect against CSRF
+      maxAge: this.configService.get('REFRESH_TOKEN_EXPIRATION'), // 7 days
+    });
   }
 }

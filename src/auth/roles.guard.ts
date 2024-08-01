@@ -33,6 +33,6 @@ export class RolesGuard implements CanActivate {
       return false; // Không tìm thấy người dùng
     }
 
-    return requiredRoles.includes(user.role as Role);
+    return requiredRoles.some((item) => user.role.includes(item));
   }
 }

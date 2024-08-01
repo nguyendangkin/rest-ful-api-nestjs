@@ -13,7 +13,6 @@ import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
-import { from, map, Observable } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -35,14 +34,22 @@ export class AuthService {
   }
 
   async handleGenerateAccessToken(user: any) {
-    const payload = { username: user.username, sub: user.userId };
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      role: user.role,
+    };
     return this.jwtService.sign(payload, {
       expiresIn: this.configService.get('ACCESS_TOKEN_EXPIRATION'),
     });
   }
 
   async handleGenerateRefreshToken(user: any) {
-    const payload = { username: user.username, sub: user.userId };
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      role: user.role,
+    };
     return this.jwtService.sign(payload, {
       expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRATION'),
     });
@@ -116,25 +123,25 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken);
-      const newPayload = { username: payload.username, sub: payload.sub };
+      const newPayload = {
+        username: payload.username,
+        sub: payload.sub,
+        role: payload.role,
+      };
       const accessToken = this.jwtService.sign(newPayload, {
         expiresIn: this.configService.get('ACCESS_TOKEN_EXPIRATION'),
       });
       return { accessToken };
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException('Refresh token không hợp lệ');
     }
-  }
-
-  decodeToken(token: string): any {
-    return this.jwtService.decode(token);
   }
 
   private setRefreshTokenCookie(res: Response, token: string) {
     res.cookie('refresh_token', token, {
       httpOnly: true,
-      secure: this.configService.get('JWT_SECRET'), // Use secure cookies in production
-      sameSite: 'strict', // Protect against CSRF
+      secure: this.configService.get('JWT_SECRET'),
+      sameSite: 'strict',
       maxAge: this.configService.get('REFRESH_TOKEN_EXPIRATION'), // 7 days
     });
   }

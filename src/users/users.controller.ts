@@ -8,6 +8,9 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from 'src/enums/role.enum';
 import { UsersService } from 'src/users/users.service';
 
 @UseInterceptors(ClassSerializerInterceptor)
@@ -15,9 +18,10 @@ import { UsersService } from 'src/users/users.service';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
-  async findAllUser() {
+  @Roles(Role.Admin)
+  async getAllUser() {
     return await this.usersService.getAllUser();
   }
 

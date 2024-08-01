@@ -36,7 +36,7 @@ export class AuthController {
   ) {
     const refreshToken = req.cookies['refresh_token'];
     if (!refreshToken) {
-      res.status(401).json({ message: 'Refresh token not found' });
+      res.status(401).json({ message: 'Không tìm thấy Refresh Token' });
       return;
     }
 
@@ -44,7 +44,7 @@ export class AuthController {
       const { accessToken } = await this.authService.refreshToken(refreshToken);
       return { access_token: accessToken };
     } catch (error) {
-      res.status(401).json({ message: 'Invalid refresh token' });
+      res.status(401).json({ message: 'Refresh token không hợp lệ' });
     }
   }
 }

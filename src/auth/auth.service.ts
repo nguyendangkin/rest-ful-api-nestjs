@@ -118,7 +118,7 @@ export class AuthService {
       const payload = await this.jwtService.verifyAsync(refreshToken);
       const newPayload = { username: payload.username, sub: payload.sub };
       const accessToken = this.jwtService.sign(newPayload, {
-        expiresIn: '15m',
+        expiresIn: this.configService.get('ACCESS_TOKEN_EXPIRATION'),
       });
       return { accessToken };
     } catch (error) {

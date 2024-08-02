@@ -30,7 +30,9 @@ export class UsersController {
     return await this.usersService.getAllUser();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Put()
+  @Roles(Role.User)
   async updateUser(@Body() updateUserData: UpdateUserDTO) {
     return await this.usersService.updateUser(updateUserData);
   }

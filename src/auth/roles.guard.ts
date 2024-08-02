@@ -33,6 +33,22 @@ export class RolesGuard implements CanActivate {
       return false; // Không tìm thấy người dùng
     }
 
-    return requiredRoles.some((item) => user.role.includes(item));
+    const hasRole = requiredRoles.some((role) => user.role === role);
+
+    if (!hasRole) {
+      return false; // Người dùng không có quyền cần thiết
+    }
+
+    // Kiểm tra quyền bổ sung
+    const targetUserId = request.body.id;
+    if (user.role === Role.User && userId !== +targetUserId) {
+      return false; // Người dùng chỉ có thể thao tác trên tài khoản của mình
+    }
+
+    if (user.role === Role.Mod && request.method === 'DELETE') {
+      return false; // Mod không thể xóa tài khoản
+    }
+
+    return true;
   }
 }

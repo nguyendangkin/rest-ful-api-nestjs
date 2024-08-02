@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Request,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -32,12 +33,14 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Put()
-  @Roles(Role.User)
+  @Roles(Role.User, Role.Mod, Role.Admin)
   async updateUser(@Body() updateUserData: UpdateUserDTO) {
     return await this.usersService.updateUser(updateUserData);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete()
+  @Roles(Role.User, Role.Admin)
   async deleteUser(@Body() deleteUserData: DeleteUserDTO) {
     return await this.usersService.deleteUser(deleteUserData.id);
   }

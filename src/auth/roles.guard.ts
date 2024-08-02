@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from 'src/decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
@@ -24,29 +30,44 @@ export class RolesGuard implements CanActivate {
     const userId = request.user?.userId; // Giả sử id người dùng đã được đính kèm vào request
 
     if (!userId) {
-      return false; // Người dùng chưa được xác thực
+      throw new HttpException(
+        'Người dùng chưa được xác thực',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const user = await this.usersService.findById(userId);
 
     if (!user) {
-      return false; // Không tìm thấy người dùng
+      throw new HttpException(
+        'Không tìm thấy người dùng',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     const hasRole = requiredRoles.some((role) => user.role === role);
 
     if (!hasRole) {
-      return false; // Người dùng không có quyền cần thiết
+      throw new HttpException(
+        'Người dùng không có quyền cần thiết',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     // Kiểm tra quyền bổ sung
     const targetUserId = request.body.id;
     if (user.role === Role.User && userId !== +targetUserId) {
-      return false; // Người dùng chỉ có thể thao tác trên tài khoản của mình
+      throw new HttpException(
+        'Người dùng chỉ có thể thao tác trên tài khoản của mình',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     if (user.role === Role.Mod && request.method === 'DELETE') {
-      return false; // Mod không thể xóa tài khoản
+      throw new HttpException(
+        'Mod không thể xóa tài khoản',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     return true;

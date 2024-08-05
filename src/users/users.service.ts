@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Permission } from 'src/helpers/checkPermission.helper';
 import { UpdateUserDTO } from 'src/users/dto/updateUserDTO.dto';
 import { User } from 'src/users/entity/user.entity';
 import { Repository } from 'typeorm';
@@ -61,9 +62,11 @@ export class UsersService {
     }
   }
 
-  async updateUser(updateUserData: UpdateUserDTO) {
+  async updateUser(updateUserData: UpdateUserDTO, currentUser: User) {
     try {
       const { id, ...updateData } = updateUserData;
+
+      Permission.checkForUser(+id, currentUser);
 
       // Kiểm tra xem người dùng có tồn tại không
       const existingUser = await this.usersRepository.findOne({

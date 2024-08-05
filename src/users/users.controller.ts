@@ -13,11 +13,14 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/roles.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { Role } from 'src/enums/role.enum';
+
+import { Role } from 'src/auth/enums/role.enum';
 import { DeleteUserDTO } from 'src/users/dto/deleteUserDTO.dto';
 import { UpdateUserDTO } from 'src/users/dto/updateUserDTO.dto';
 import { UsersService } from 'src/users/users.service';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { CurrentUser } from 'src/users/decorators/currentUser.decorator';
+import { User } from 'src/users/entity/user.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
@@ -34,8 +37,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Put()
   @Roles(Role.User, Role.Mod, Role.Admin)
-  async updateUser(@Body() updateUserData: UpdateUserDTO) {
-    return await this.usersService.updateUser(updateUserData);
+  async updateUser(
+    @Body() updateUserData: UpdateUserDTO,
+    @CurrentUser() currentUser: User,
+  ) {
+    return await this.usersService.updateUser(updateUserData, currentUser);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

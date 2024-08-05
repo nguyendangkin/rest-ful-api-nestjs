@@ -39,7 +39,7 @@ export class AuthService {
       sub: user.id,
       role: user.role,
     };
-    return this.jwtService.sign(payload, {
+    return await this.jwtService.sign(payload, {
       expiresIn: this.configService.get('ACCESS_TOKEN_EXPIRATION'),
     });
   }
@@ -50,7 +50,7 @@ export class AuthService {
       sub: user.id,
       role: user.role,
     };
-    return this.jwtService.sign(payload, {
+    return await this.jwtService.sign(payload, {
       expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRATION'),
     });
   }
@@ -112,7 +112,7 @@ export class AuthService {
     const refreshToken = await this.handleGenerateRefreshToken(user);
 
     // Set refresh token in HTTP-only cookie
-    this.setRefreshTokenCookie(res, refreshToken);
+    await this.setRefreshTokenCookie(res, refreshToken);
 
     return {
       username: user.username,

@@ -6,8 +6,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from 'src/decorators/roles.decorator';
-import { Role } from 'src/enums/role.enum';
+import { ROLES_KEY } from 'src/auth/decorators/roles.decorator';
+
+import { Role } from 'src/auth/enums/role.enum';
+import { Permission } from 'src/helpers/checkPermission.helper';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
@@ -27,7 +29,7 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const request = context.switchToHttp().getRequest();
-    const userId = request.user?.userId; // Giả sử id người dùng đã được đính kèm vào request
+    const userId = request.user?.id; // Giả sử id người dùng đã được đính kèm vào request
 
     if (!userId) {
       throw new HttpException(
@@ -54,21 +56,14 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    // Kiểm tra quyền bổ sung
-    const targetUserId = request.body.id;
-    if (user.role === Role.User && userId !== +targetUserId) {
-      throw new HttpException(
-        'Người dùng chỉ có thể thao tác trên tài khoản của mình',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    if (user.role === Role.Mod && request.method === 'DELETE') {
-      throw new HttpException(
-        'Mod không thể xóa tài khoản',
-        HttpStatus.FORBIDDEN,
-      );
-    }
+    // // Kiểm tra quyền bổ sung
+    // const targetUserId = request.body.id;
+    // if (user.role === Role.User && userId !== +targetUserId) {
+    //   throw new HttpException(
+    //     'Người dùng chỉ có thể thao tác trên tài khoản của mình',
+    //     HttpStatus.FORBIDDEN,
+    //   );
+    // }
 
     return true;
   }

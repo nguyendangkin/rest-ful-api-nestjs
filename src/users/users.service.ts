@@ -1,5 +1,12 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AuthService } from 'src/auth/auth.service';
 import { Permission } from 'src/helpers/checkPermission.helper';
 import { UpdateUserDTO } from 'src/users/dto/updateUserDTO.dto';
 import { User } from 'src/users/entity/user.entity';
@@ -10,6 +17,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @Inject(forwardRef(() => AuthService))
+    private authService: AuthService,
   ) {}
 
   async findOneUser(username: string) {
@@ -64,7 +73,7 @@ export class UsersService {
 
   async updateUser(updateUserData: UpdateUserDTO, currentUser: User) {
     try {
-      const { id, ...updateData } = updateUserData;
+      const { id, password, ...updateData } = updateUserData;
 
       Permission.checkForUser(+id, currentUser);
 
@@ -79,8 +88,14 @@ export class UsersService {
         );
       }
 
-      // Cập nhật thông tin người dùng
-      await this.usersRepository.update(id, updateData);
+      const updatePayload = {
+        ...updateData,
+        password: password
+          ? await this.authService.handleHashPassword(password)
+          : undefined,
+      };
+
+      await this.usersRepository.update(id, updatePayload);
 
       return {
         message: 'Người dùng đã được cập nhật thành công!',

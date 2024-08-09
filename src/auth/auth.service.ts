@@ -85,6 +85,7 @@ export class AuthService {
 
       return {
         message: 'Đăng ký người dùng thành công',
+        statusCode: HttpStatus.OK,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -120,6 +121,8 @@ export class AuthService {
     return {
       username: user.username,
       access_token: accessToken,
+      statusCode: HttpStatus.OK,
+      message: 'Đăng nhập thành công',
     };
   }
 
